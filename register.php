@@ -12,6 +12,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $error = "Semua field harus diisi!";
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = "Email tidak valid!";
+    } elseif (strlen($password) < 8) {
+        $error = "Password harus minimal 8 karakter!";
     } elseif ($password !== $confirm_password) {
         $error = "Password tidak cocok!";
     } else {
