@@ -1,188 +1,145 @@
+<?php
+session_start();
+include 'connect.php';
+
+if (!isset($_SESSION['user_id'])) {
+    header("Location: login.php");
+    exit();
+}
+
+
+$category_query = "SELECT * FROM categories";
+$category_result = mysqli_query($conn, $category_query);
+
+$user_id = $_SESSION['user_id'];
+$task_query = "SELECT * FROM tasks WHERE user_id = '$user_id' ORDER BY id DESC";
+$task_result = mysqli_query($conn, $task_query);
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $task = $_POST['task'];
+    $category_id = $_POST['category_id'];
+    $status = "not complete";
+
+    $insert_query = "INSERT INTO tasks (task, category_id, user_id, status) 
+                     VALUES ('$task', '$category_id', '$user_id', '$status')";
+
+    if (mysqli_query($conn, $insert_query)) {
+        header("Location: index.php");
+        exit();
+    } else {
+        echo "Error: " . mysqli_error($conn);
+    }
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TDL PaundraDewa</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" 
-          rel="stylesheet" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            background-image: url('images/valen.jpg');
+            background-size: cover;
+            background-position: center;
+        }
+        .todo-container {
+            max-width: 700px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.63);
+        }
+        .doneText {
+            text-decoration: line-through;
+            color: gray;
+        }
+    </style>
 </head>
-<style>
-    body {
-        background-color:rgb(42, 48, 54);
-    }
-    .todo-container {
-        max-width: 700px;
-        margin: auto;
-        background: white;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-    }
-    .doneText {
-        text-decoration: line-through;
-        color: red;
-    }
-    .todo-item {
-        padding: 10px;
-        border-radius: 8px;
-        transition: all 0.3s ease-in-out;
-    }
-    .todo-item:hover {
-        background:rgb(143, 255, 188);
-    }
-    .btn-custom {
-        width: 100px;
-    }
-    
-    .logout-btn {
-        margin-top: 20px;
-        background-color:rgb(46, 112, 255);
-        color: white;
-        border: none;
-        padding: 12px 24px;
-        font-size: 16px;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: background-color 0.3s ease, transform 0.3s ease;
-        text-decoration: none; 
-    }
-
-    .logout-btn:hover {
-        background-color:rgb(46, 112, 255);
-        color: white;
-        transform: scale(1.05);
-    }
-
-    .logout-btn i {
-        margin-right: 8px;
-    }
-</style>
-
 <body>
-    <div id="app" class="container mt-5">
-        <div class="todo-container">
-            <h1 class="text-center text-primary">📌 TDL Paundra</h1>
 
-            <div class="row g-2 mt-4">
-                <div class="col-3">
-                    <input type="time" class="form-control" v-model="startTime">
-                </div>
-                <div class="col-3">
-                    <input type="time" class="form-control" v-model="endTime">
-                </div>
-                <div class="col-4">
-                    <input type="text" class="form-control" placeholder="Tambahkan tugas..." v-model="activity">
-                </div>
-                <div class="col-2">
-                    <button class="btn btn-primary form-control" @click="addTodo"><i class="fas fa-plus"></i> Tambah</button>
-                </div>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand"><i class="fas fa-clipboard-list"></i> TDL Paundra</a>
+            <div class="d-flex align-items-center">
+                <a href="profil.php" class="btn btn-light btn-sm me-2">My Profile</a>
+                <a href="logout.php" class="btn btn-light btn-sm">Logout</a>
             </div>
+        </div>
+    </nav>
 
-            <div class="mt-4">
-                <div v-for="(item, index) in todoList" class="todo-item d-flex align-items-center justify-content-between border-bottom p-2">
+    <div class="container mt-5">
+        <h1 class="text-center text-white"><i class="fas fa-clipboard-list"></i> TDL Paundra</h1>
+
+        <div class="todo-container mt-4">
+            <form method="POST" action="index.php">
+                <div class="row g-2">
+                    <div class="col-md-6">
+                        <input type="text" class="form-control" name="task" placeholder="Tambahkan tugas..." required>
+                    </div>
+                    <div class="col-md-4">
+                        <select class="form-control" name="category_id" required>
+                            <option value="">Pilih Kategori</option>
+                            <?php while ($row = mysqli_fetch_assoc($category_result)) : ?>
+                                <option value="<?= $row['id'] ?>"><?= $row['category'] ?></option>
+                            <?php endwhile; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-primary form-control" type="submit"><i class="fas fa-plus"></i> Tambah</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="todo-container mt-4">
+            <input type="text" id="search" class="form-control" placeholder="🔍 Cari tugas..." autocomplete="off">
+        </div>
+
+        <div class="todo-container mt-4">
+            <h4 class="text-center">📌 Daftar Tugas</h4>
+            <ul class="list-group" id="task-list">
+                <?php while ($task = mysqli_fetch_assoc($task_result)) : ?>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <?= htmlspecialchars($task['task']) ?>
                     <div>
-                        <button class="btn btn-outline-danger btn-sm me-1" @click="deleteTodo(index)">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                        <button class="btn btn-success btn-sm me-1" @click="doneTodo(index)" :disabled="item.done">
-                            <i class="fas fa-check"></i>
-                        </button>
-                        <button class="btn btn-warning btn-sm me-1" @click="editTodo(index)">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <span v-if="editIndex !== index" :class="{doneText: item.done}">{{ item.start }} - {{ item.end }} : {{ item.text }}</span>
+                        <button class="btn btn-success btn-sm complete-task" data-id="<?= $task['id'] ?>">Complete</button>
+                        <a href="delete_task.php?id=<?= $task['id'] ?>" class="btn btn-danger btn-sm">Hapus</a>
                     </div>
+                </li>
 
-                    <div v-if="editIndex === index" class="d-flex gap-2">
-                        <input type="time" v-model="editStart" class="form-control form-control-sm">
-                        <input type="time" v-model="editEnd" class="form-control form-control-sm">
-                        <input type="text" v-model="editText" class="form-control form-control-sm">
-                        <button class="btn btn-info btn-sm" @click="saveEdit(index)">
-                            <i class="fas fa-save"></i> Simpan
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <a href="logout.php" class="logout-btn">
-                <i class="fas fa-sign-out-alt"></i> Logout
-            </a>
+                    </li>
+                <?php endwhile; ?>
+            </ul>
         </div>
     </div>
 
-    <script type="module">
-        import { createApp } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js'
-
-        createApp({
-            data() {
-                return {
-                    startTime: '',
-                    endTime: '',
-                    activity: '',
-                    todoList: [],  
-                    editIndex: null,
-                    editStart: '',
-                    editEnd: '',
-                    editText: ''
-                }
-            },
-            methods: {
-                addTodo() {
-                    if (this.activity.trim() === '' || this.startTime === '' || this.endTime === '') {
-                        alert('Mohon isi semua field!');
-                        return;
+    <script>
+        $(document).ready(function () {
+            function loadTasks(query = '') {
+                $.ajax({
+                    url: "search.php",
+                    method: "POST",
+                    data: { query: query },
+                    success: function (data) {
+                        $("#task-list").html(data);
                     }
-
-                    let newItem = {
-                        text: this.activity,
-                        start: this.startTime,
-                        end: this.endTime,
-                        done: false
-                    };
-
-                    this.todoList.push(newItem);
-                    this.saveTodos();
-                    
-                   
-                    this.startTime = '';
-                    this.endTime = '';
-                    this.activity = '';
-                },
-                deleteTodo(index) {
-                    this.todoList.splice(index, 1);
-                    this.saveTodos();
-                },
-                doneTodo(index) {
-                    this.todoList[index].done = true;
-                    this.saveTodos();
-                },
-                editTodo(index) {
-                    this.editIndex = index;
-                    this.editStart = this.todoList[index].start;
-                    this.editEnd = this.todoList[index].end;
-                    this.editText = this.todoList[index].text;
-                },
-                saveEdit(index) {
-                    if (this.editText.trim() === '' || this.editStart === '' || this.editEnd === '') {
-                        alert('Mohon isi semua field!');
-                        return;
-                    }
-
-                    this.todoList[index].start = this.editStart;
-                    this.todoList[index].end = this.editEnd;
-                    this.todoList[index].text = this.editText;
-                    this.editIndex = null;
-                    this.saveTodos();
-                },
-                saveTodos() {
-                    localStorage.setItem('todos', JSON.stringify(this.todoList));
-                },
+                });
             }
-        }).mount('#app');
+
+            loadTasks();
+
+            $("#search").keyup(function () {
+                let searchText = $(this).val();
+                loadTasks(searchText);
+            });
+        });
     </script>
+
 </body>
 </html>
